@@ -1,5 +1,6 @@
 package com.application.booker.entity;
 
+import com.application.booker.enums.Role;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -8,7 +9,10 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Entity
 @Table(name = "users")
@@ -26,11 +30,17 @@ public class Users implements UserDetails {
 
     private String email;
 
-    private String role;
+    @Enumerated(EnumType.STRING)
+    private Role role;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority(role));
+        Set<SimpleGrantedAuthority> authoritySet = new HashSet<>();
+        authoritySet.add(new SimpleGrantedAuthority("ROLE_" + role.name()));
+        Set<SimpleGrantedAuthority> permissionAuthorities = role.getPermissions().stream()
+                .map(permissions -> new SimpleGrantedAuthority(permissions.name())).collect(Collectors.toSet());
+        authoritySet.addAll(permissionAuthorities);
+        return authoritySet;
     }
 
     @Override
